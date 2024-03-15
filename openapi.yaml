@@ -1,0 +1,37 @@
+openapi: 3.0.0
+info:
+  title: Text Seeker API
+  version: 1.0
+  description: API for uploading and processing files.
+servers:
+  - url: https://yourdomain.com/api
+paths:
+  /upload:
+    post:
+      summary: Upload a file for processing
+      description: Allows users to upload a file, which is then processed to return insights.
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: The file to be uploaded and processed.
+              required:
+                - file
+      responses:
+        '200':
+          description: File processed successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  insights:
+                    type: string
+                    description: Insights derived from the processed file.
+        '400':
+          description: Bad request, such as missing file.
