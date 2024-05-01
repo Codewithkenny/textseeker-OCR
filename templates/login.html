@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login / Register</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.0.3/dist/tailwind.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-700 flex justify-center items-center h-screen">
+    <div class="bg-white p-8 rounded-lg shadow-lg">
+        <h2 class="text-2xl font-bold mb-6">Login</h2>
+        <form id="loginForm">
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="email">Email</label>
+                <input
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    id="email" type="email" placeholder="Email">
+            </div>
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="password">Password</label>
+                <input
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
+                    id="password" type="password" placeholder="******************">
+            </div>
+            <div class="flex items-center justify-between">
+            <button id="loginButton" type="submit"
+                class="relative bg-blue-500 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                <span id="loginButtonText">Login</span>
+                <svg id="loginButtonSpinner" class="hidden animate-spin absolute inset-0 m-auto" xmlns="http://www.w3.org/2000/svg"
+                    fill="none" viewBox="0 0 24 24">
+                    <!-- SVG path for spinner -->
+                </svg>
+            </button>
+                <a class="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800"
+                    href="/register">Register</a>
+            </div>
+        </form>
+        <div id="loginError" class="mt-4 text-red-500"></div>
+    </div>
+   <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js';
+    import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js';
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCGNIRV-CG6DdRyDRNS0Co_mw-osvSy_W4",
+        authDomain: "textseeker-d6cde.firebaseapp.com",
+        projectId: "textseeker-d6cde",
+        storageBucket: "textseeker-d6cde.appspot.com",
+        messagingSenderId: "836424722482",
+        appId: "1:836424722482:web:71f56fbec9b2e1e8a2f42b",
+        measurementId: "G-QE40EQ4BV9"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    document.getElementById('loginForm').addEventListener('submit', e => {
+        e.preventDefault();
+        // Show spinner and hide text
+        document.getElementById('loginButtonText').classList.add('hidden');
+        document.getElementById('loginButtonSpinner').classList.remove('hidden');
+
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        signInWithEmailAndPassword(auth, email, password)
+            .then(userCredential => {
+                // Signed in, now get the user's ID token
+                userCredential.user.getIdToken().then(idToken => {
+                    // Send token to your backend via HTTPS
+                    fetch('/sessionLogin', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ idToken: idToken }),
+
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === "success") {
+                                // Redirect to the dashboard
+                                window.location.href = '/dashboard';
+                            } else {
+                                // Handle the error, show an error message
+                                document.getElementById('loginError').textContent = 'Failed to authenticate with the server.';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error during session login:', error);
+                            document.getElementById('loginError').textContent = 'Server error.';
+                        })
+                        .finally(() => {
+                            // Hide spinner and show text
+                            document.getElementById('loginButtonText').classList.remove('hidden');
+                            document.getElementById('loginButtonSpinner').classList.add('hidden');
+                        });
+                });
+            })
+            .catch(error => {
+                document.getElementById('loginError').textContent = error.message;
+            });
+    });
+</script>
+
+</body>
+
+</html>

@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- Start the content block after extending base.html and without redefining the body or header -->
+
+<div class="bg-gray-700 flex min-h-screen">
+    <!-- Main Content Area -->
+    <div class="container mx-auto mt-12">
+        <div class="bg-white p-8 rounded-lg shadow-lg">
+            <h1 class="text-xl font-semibold text-gray-800 mb-6">Upload File for OCR</h1>
+            <!-- Upload form content here -->
+            <form id="uploadForm" action="/uploads" method="post" enctype="multipart/form-data">
+                <input id="fileInput" type="file" name="file" class="hidden" />
+                <label for="fileInput"
+                    class="w-64 flex flex-col items-center px-4 py-6 bg-white text-blue-500 rounded-lg shadow-lg tracking-wide uppercase border border-blue cursor-pointer hover:bg-blue-500 hover:text-white">
+                    <svg class="w-8 h-8" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                        <!-- SVG path for icon -->
+                    </svg>
+                    <span class="mt-2 text-base leading-normal">Select a file</span>
+                </label>
+                <!-- Button for file upload -->
+                <button type="submit"
+                    class="relative bg-blue-500 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    <span id="uploadButtonText">Upload</span>
+                    <svg id="uploadButtonSpinner" class="hidden animate-spin absolute inset-0 m-auto"
+                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                        </circle>
+                        <path class="opacity-75" fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A8.001 8.001 0 014 12H0c0 6.627 5.373 12 12 12v-4c-3.86 0-7.26-1.743-9.544-4.709l1.44-1.44zM20 12c0-6.627-5.373-12-12-12v4c3.86 0 7.26 1.743 9.544 4.709l-1.44 1.44A8.001 8.001 0 0120 12z">
+                        </path>
+                    </svg>
+                </button>
+            </form>
+            <div id="ocrResult" class="mt-6 text-lg text-gray-800 border border-gray-300 p-4 rounded-md shadow-md">
+                <p class="font-semibold mb-2">OCR Result:</p>
+                <div class="overflow-auto max-h-60">
+                    <!-- OCR result will be displayed here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- OCR History Panel -->
+<div id="ocrHistory"
+    class="text-lg text-gray-800 bg-white border border-gray-300 p-3 rounded-md shadow-md w-1/3 min-h-screen overflow-auto">
+    <p class="font-semibold mb-2">OCR History:</p>
+    <!-- OCR history will be displayed here -->
+</div>
+</div>
+
+
+<script>
+    // Function to add a new item to the OCR history
+        function addToOcrHistory(result) {
+            const ocrHistory = document.getElementById('ocrHistory');
+            const newItem = document.createElement('div');
+            newItem.classList.add('p-2');
+            newItem.textContent = result;
+            ocrHistory.appendChild(newItem);
+        }
+
+        // Fetch OCR history from the server and update the history panel
+            function updateHistory() {
+                fetch('/history')
+                    .then(response => response.json())
+                    .then(data => {
+                        const historyPanel = document.getElementById('ocrHistory');
+                        historyPanel.innerHTML = '';
+                        if (data.history && data.history.length > 0) {
+                            data.history.forEach(result => {
+                                const p = document.createElement('p');
+                                p.textContent = result;
+                                historyPanel.appendChild(p);
+                            });
+                        } else {
+                            const p = document.createElement('p');
+                            p.textContent = 'No OCR history available.';
+                            historyPanel.appendChild(p);
+                        }
+                    })
+                    .catch(error => console.error('Error fetching OCR history:', error));
+            }
+
+            // Call updateHistory function when the page loads
+            window.addEventListener('load', updateHistory);
+
+
+    document.getElementById('uploadForm').addEventListener('submit', function (event) {
+        event.preventDefault(); // Prevent default form submission
+
+        const formData = new FormData(this); // Create FormData object from form
+        const fileInput = document.getElementById('fileInput');
+        const file = fileInput.files[0];
+
+        if (!file) {
+            alert('Please select a file.');
+            return;
+        }
+
+        // Show spinner and hide text
+        document.getElementById('uploadButtonText').classList.add('hidden');
+        document.getElementById('uploadButtonSpinner').classList.remove('hidden');
+
+        fetch('/uploads', {
+            method: 'POST',
+            body: formData,
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Upload failed.');
+                }
+                return response.text(); // Return response text
+            })
+            .then(ocrResult => {
+                // Update OCR result text
+                document.getElementById('ocrResult').textContent = ocrResult;
+            })
+            .catch(error => {
+                // Handle upload error
+                console.error('Upload error:', error);
+                alert('Upload failed. Please try again.');
+            })
+            .finally(() => {
+                // Hide spinner and show text
+                document.getElementById('uploadButtonText').classList.remove('hidden');
+                document.getElementById('uploadButtonSpinner').classList.add('hidden');
+            });
+    });
+</script>
+
+{% endblock %}
